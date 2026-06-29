@@ -16,6 +16,9 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+# Patch vulnerable Alpine packages
+RUN apk upgrade --no-cache
+
 # Create a non-root system user for security best practices
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
