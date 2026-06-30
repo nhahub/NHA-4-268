@@ -16,8 +16,8 @@ terraform {
 
 provider "aws" {
   region = "us-east-1"
-  # Credentials are read from environment variables:
-  # AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+  access_key = "REDACTED"
+  secret_key = "REDACTED"
 }
 
 
