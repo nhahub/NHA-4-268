@@ -59,3 +59,14 @@ This project abandons traditional push-based deployments in favor of a highly se
 cd terraform
 terraform init
 terraform apply
+```
+
+### Members
+
+| Name |
+| --- |
+| Omar Ahmed Asaad |
+| Ahmed Mahmoud |
+| Ahmed Tarek |
+| Abanoup Alkees Bishoy |
+| Sohip Ali |
