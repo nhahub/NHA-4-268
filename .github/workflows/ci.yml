@@ -47,6 +47,7 @@ jobs:
 
       - name: Run Maven Tests and Build
         run: |
+          chmod +x ./mvnw
           ./mvnw clean package
 
       - name: Configure AWS credentials
