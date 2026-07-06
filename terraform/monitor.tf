@@ -17,21 +17,20 @@ resource "helm_release" "prometheus" {
   values = [
     yamlencode({
       grafana = {
-        # 1. Safe password
         adminPassword = random_password.grafana_password.result
-        
-        # 2. Keep the raw service internal to bypass the NLB block
+
         service = {
           type = "ClusterIP"
         }
-        
-        # 3. Use an Ingress to trigger a permitted ALB instead
+
         ingress = {
           enabled          = true
           ingressClassName = "alb"
           annotations = {
-            "alb.ingress.kubernetes.io/scheme"      = "internet-facing"
-            "alb.ingress.kubernetes.io/target-type" = "ip"
+            "alb.ingress.kubernetes.io/scheme"             = "internet-facing"
+            "alb.ingress.kubernetes.io/target-type"        = "ip"
+            "alb.ingress.kubernetes.io/healthcheck-path"   = "/api/health"
+            "alb.ingress.kubernetes.io/success-codes"      = "200"
           }
           hosts = []
           paths = ["/"]
