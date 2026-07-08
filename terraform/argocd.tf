@@ -9,33 +9,69 @@ resource "kubernetes_namespace_v1" "argocd" {
 
 # this installs ArgoCD from the official Helm Chart
 resource "helm_release" "argocd" {
-  depends_on = [helm_release.aws_load_balancer_controller]  
+  depends_on = [helm_release.aws_load_balancer_controller]
   name       = "argocd"
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argo-cd"
-  version    = "7.3.1" 
-  namespace  = kubernetes_namespace_v1.argocd.metadata[0].name 
+  version    = "7.3.1"
+  namespace  = kubernetes_namespace_v1.argocd.metadata[0].name
 
   values = [
     yamlencode({
       server = {
-        insecure = true 
-        
-        ingress = {
-          enabled          = true
-          ingressClassName = "alb"
-          annotations = {
-            "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
-            "alb.ingress.kubernetes.io/target-type"      = "ip"
-            "alb.ingress.kubernetes.io/backend-protocol" = "HTTP"
-            "alb.ingress.kubernetes.io/listen-ports"     = "[{\"HTTP\": 80}]"
-            "alb.ingress.kubernetes.io/success-codes"    = "200,307"
-          }
-          paths = ["/"]
-        }
+        insecure = true
+        extraArgs = ["--insecure"]
+        # Disable the chart's broken template entirely
+        ingress  = { enabled = false }  
       }
     })
   ]
+}
+
+# Define the custom Ingress manually
+resource "kubernetes_ingress_v1" "argocd_custom" {
+  metadata {
+    name      = "argocd-server-custom"
+    namespace = kubernetes_namespace_v1.argocd.metadata[0].name
+    annotations = {
+      "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
+      "alb.ingress.kubernetes.io/target-type"      = "ip"
+      "alb.ingress.kubernetes.io/backend-protocol" = "HTTP"
+      "alb.ingress.kubernetes.io/listen-ports"     = "[{\"HTTP\": 80}]"
+      "alb.ingress.kubernetes.io/success-codes"    = "200,307"
+    }
+  }
+
+  spec {
+    ingress_class_name = "alb"
+    rule {
+      http {
+        path {
+          path      = "/"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = "argocd-server"
+              port {
+                number = 80 # Explicitly target the insecure HTTP port
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  depends_on = [helm_release.argocd]
+}
+
+# Fetch the URL from our new custom Ingress
+data "kubernetes_ingress_v1" "argocd_url_fetcher" {
+  metadata {
+    name      = kubernetes_ingress_v1.argocd_custom.metadata[0].name
+    namespace = kubernetes_namespace_v1.argocd.metadata[0].name
+  }
+  depends_on = [kubernetes_ingress_v1.argocd_custom]
 }
 
 # because terraform applies resources in parallel, it won't know waht an application is until Helm Chart is fully installed.
@@ -66,8 +102,8 @@ data "kubernetes_secret_v1" "argocd_password" {
 
 data "kubernetes_ingress_v1" "argocd" {
   metadata {
-    name      = "argocd-server"
+    name      = "argocd-server-custom"
     namespace = kubernetes_namespace_v1.argocd.metadata[0].name
   }
-  depends_on = [helm_release.argocd]
+  depends_on = [kubernetes_ingress_v1.argocd_custom]
 }
