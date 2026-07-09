@@ -23,7 +23,7 @@ spec:
       containers:
         - name: app-migration
           # This line is updated automatically by the CI pipeline (ci.yml)
-          image: 315401414097.dkr.ecr.us-east-1.amazonaws.com/app-migration-repo:7415632e4078a46f1f56b67acdc2060a2dca5f87
+          image: 315401414097.dkr.ecr.us-east-1.amazonaws.com/app-migration-repo:d47882a07bcd7a5305501704711305ae4130eb41
           ports:
             - containerPort: 8080
           env:
