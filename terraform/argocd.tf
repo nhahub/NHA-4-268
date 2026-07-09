@@ -65,13 +65,18 @@ resource "kubernetes_ingress_v1" "argocd_custom" {
   depends_on = [helm_release.argocd]
 }
 
+resource "time_sleep" "wait_for_argocd_alb" {
+  depends_on      = [kubernetes_ingress_v1.argocd_custom]
+  create_duration = "60s"
+}
+
 # Fetch the URL from our new custom Ingress
 data "kubernetes_ingress_v1" "argocd_url_fetcher" {
   metadata {
     name      = kubernetes_ingress_v1.argocd_custom.metadata[0].name
     namespace = kubernetes_namespace_v1.argocd.metadata[0].name
   }
-  depends_on = [kubernetes_ingress_v1.argocd_custom]
+  depends_on = [time_sleep.wait_for_argocd_alb]
 }
 
 # because terraform applies resources in parallel, it won't know waht an application is until Helm Chart is fully installed.
