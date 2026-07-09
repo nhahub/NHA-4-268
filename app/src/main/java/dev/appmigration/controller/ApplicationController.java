@@ -1,4 +1,4 @@
-package dev.appmigration;
+package dev.appmigration.controller;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.appmigration.domain.Application;
 import dev.appmigration.domain.Deployment;
+import dev.appmigration.repository.ApplicationRepository;
+import dev.appmigration.repository.DeploymentRepository;
 import lombok.RequiredArgsConstructor;
 
 @RestController

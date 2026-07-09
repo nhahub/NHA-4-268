@@ -1,7 +1,10 @@
-package dev.appmigration;
+package dev.appmigration.controller;
 
 import dev.appmigration.domain.MonitoringMetric;
 import dev.appmigration.domain.PipelineRun;
+import dev.appmigration.repository.DeploymentRepository;
+import dev.appmigration.repository.PipelineRunRepository;
+import dev.appmigration.repository.MonitoringMetricRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

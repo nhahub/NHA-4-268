@@ -1,4 +1,4 @@
-package dev.appmigration;
+package dev.appmigration.repository;
 
 import java.util.Optional;
 import java.util.UUID;
