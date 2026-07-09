@@ -1,4 +1,5 @@
 # Project AppMigration: Cloud-Native Deployment Auditing Platform
+[![Build and Push to Amazon ECR](https://github.com/Hero-Xero/AppMigration/actions/workflows/ci.yml/badge.svg)](https://github.com/Hero-Xero/AppMigration/actions/workflows/ci.yml)
 
 Project AppMigration is the complete modernization of a legacy, on-premises metrics and auditing tool. The original application was used to scrape and track legacy internal deployment activity. This project represents its migration to a fully cloud-native architecture on Amazon Elastic Kubernetes Service (EKS), completely rebuilt to audit and track modern, cloud-native deployments and pipeline outcomes.
 
