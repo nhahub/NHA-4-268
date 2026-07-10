@@ -114,7 +114,7 @@ jobs:
         run: |
           set -e
 
-          APP_ID=$(curl -sf -X POST "$APP_URL/api/applications/find-or-create" \
+          APP_ID=$(curl -sf -X POST "$APP_URL/api/applications" \
             -H "Content-Type: application/json" \
             -d '{
               "name": "AppMigration",
