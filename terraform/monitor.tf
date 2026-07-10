@@ -1,6 +1,5 @@
 resource "random_password" "grafana_password" {
   length  = 16
-  # FIX 1: Turn off special characters to prevent container crashes
   special = false 
 }
 
@@ -48,7 +47,7 @@ resource "helm_release" "prometheus" {
           enabled          = true
           ingressClassName = "alb"
           annotations = {
-            "alb.ingress.kubernetes.io/scheme"             = "internet-facing"
+            "alb.ingress.kubernetes.io/scheme"             = "internet-facing" 
             "alb.ingress.kubernetes.io/target-type"        = "ip"
             "alb.ingress.kubernetes.io/healthcheck-path"   = "/api/health"
             "alb.ingress.kubernetes.io/success-codes"      = "200"

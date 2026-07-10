@@ -9,7 +9,7 @@ resource "kubernetes_namespace_v1" "argocd" {
 
 # this installs ArgoCD from the official Helm Chart
 resource "helm_release" "argocd" {
-  depends_on = [helm_release.aws_load_balancer_controller]
+  depends_on = [helm_release.aws_load_balancer_controller] // wait for the ALB controller to be installed first, to give it a url
   name       = "argocd"
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argo-cd"
@@ -19,10 +19,9 @@ resource "helm_release" "argocd" {
   values = [
     yamlencode({
       server = {
-        insecure = true
-        extraArgs = ["--insecure"]
-        # Disable the chart's broken template entirely
-        ingress  = { enabled = false }  
+        insecure = true  // argocd uses HTTPS by default, but we want to use HTTP for simplicity in this demo
+        extraArgs = ["--insecure"] // same as above, but this is the new way to do it in v2 of the Helm Chart
+        ingress  = { enabled = false }  // disable the default web address, because we will create our own custom Ingress below
       }
     })
   ]
@@ -65,6 +64,7 @@ resource "kubernetes_ingress_v1" "argocd_custom" {
   depends_on = [helm_release.argocd]
 }
 
+// we wait for the ALB to be fully provisioned before trying to fetch its URL, because terraform asks for url before its ready
 resource "time_sleep" "wait_for_argocd_alb" {
   depends_on      = [kubernetes_ingress_v1.argocd_custom]
   create_duration = "60s"

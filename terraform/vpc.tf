@@ -23,12 +23,13 @@
     map_public_ip_on_launch = true
 
     tags = {
-      Name                                   = "public-subnet-1"
-      "kubernetes.io/role/elb"               = "1"
-      "kubernetes.io/cluster/app-migration"  = "shared"
+      Name                                   = "public-subnet-1" 
+      "kubernetes.io/role/elb"               = "1" // tells AWS's Load Balancer Controller "this subnet is a valid place to put a public load balancer.
+      "kubernetes.io/cluster/app-migration"  = "shared" //  tells it "this subnet specifically belongs to this cluster"
     }
   }
 
+// 2 different subnets are required for the RDS database and load balancers to be created, so we create a second public subnet in a different availability zone
   resource "aws_subnet" "public_2" {
     vpc_id                  = aws_vpc.main.id
     cidr_block              = "10.0.2.0/24"

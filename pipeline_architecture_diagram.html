@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AppMigration — DevSecOps & GitOps Pipeline</title>
+<style>
+  :root {
+    --bg-main: #09090b;
+    --bg-card: #18181b;
+    --bg-surface: #121214;
+    --border-dim: #27272a;
+    --border-hover: #3f3f46;
+    --text-main: #f4f4f5;
+    --text-muted: #a1a1aa;
+    
+    --accent-ci: #3b82f6;
+    --accent-cd: #a855f7;
+    --accent-infra: #10b981;
+    --accent-alert: #ef4444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background: var(--bg-main);
+    color: var(--text-main);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    padding: 40px;
+    min-width: 1400px; /* Widened to prevent squashing */
+    line-height: 1.5;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .header p {
+    font-size: 13px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* PHASE CONTAINERS */
+  .phase {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-dim);
+    border-radius: 16px;
+    padding: 24px 32px 32px;
+    position: relative;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  }
+  .phase::before {
+    content: '';
+    position: absolute;
+    top: -1px; bottom: -1px; left: -1px;
+    width: 4px;
+    border-radius: 16px 0 0 16px;
+  }
+  .phase.ci::before { background: var(--accent-ci); }
+  .phase.cd::before { background: var(--accent-cd); }
+  .phase.infra::before { background: var(--accent-infra); }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .phase-header span { font-weight: 800; }
+  .phase.ci .phase-header span { color: var(--accent-ci); }
+  .phase.cd .phase-header span { color: var(--accent-cd); }
+  .phase.infra .phase-header span { color: var(--accent-infra); }
+
+  /* WORKFLOW ROWS */
+  .workflow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px; /* Restored breathing room */
+  }
+
+  /* CARDS (STEPS) */
+  .step-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-radius: 12px;
+    padding: 16px 12px; /* Increased padding */
+    width: 126px; /* Widened card */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+  .phase.ci .step-card:hover { border-color: var(--accent-ci); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15); }
+  .phase.cd .step-card:hover { border-color: var(--accent-cd); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(168, 85, 247, 0.15); }
+  .phase.infra .step-card:hover { border-color: var(--accent-infra); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.15); }
+
+  .icon-ring {
+    width: 44px;
+    height: 44px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-dim);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+  .icon-ring img, .icon-ring svg {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+  }
+
+  .step-title {
+    font-size: 12px; /* Restored font size */
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+  .step-desc {
+    font-size: 11px; /* Restored font size */
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  /* ARROWS */
+  .arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--border-hover);
+    flex-shrink: 0;
+  }
+  .arrow svg { width: 20px; height: 20px; }
+
+  /* VERTICAL CONNECTORS */
+  .vertical-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0;
+    position: relative;
+  }
+  .v-line {
+    width: 2px;
+    height: 30px;
+    background: repeating-linear-gradient(to bottom, var(--border-hover) 0, var(--border-hover) 4px, transparent 4px, transparent 8px);
+  }
+  .v-badge {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 2;
+  }
+  .v-badge svg { width: 16px; height: 16px; }
+  .v-badge.ci-cd svg { color: var(--accent-ci); }
+  .v-badge.infra-cd svg { color: var(--accent-infra); }
+
+  /* KUBERNETES CLUSTER LAYOUT */
+  .cluster-container {
+    flex-grow: 1;
+    border: 1px solid var(--border-dim);
+    background: #000;
+    border-radius: 12px;
+    padding: 24px;
+    margin-left: 16px;
+  }
+  .cluster-header {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  
+  .namespaces {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+  
+  .namespace {
+    border: 1px dashed var(--border-dim);
+    border-radius: 8px;
+    padding: 24px 12px 12px;
+    position: relative;
+    background: rgba(255,255,255,0.02);
+  }
+  .namespace-label {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-dim);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--text-main);
+  }
+
+  .pod {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .pod:last-child { margin-bottom: 0; }
+  .pod-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--bg-surface);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .pod-icon img, .pod-icon svg { width: 16px; height: 16px; }
+  .pod-info {
+    display: flex;
+    flex-direction: column;
+  }
+  .pod-title { font-size: 11px; font-weight: 600; color: var(--text-main); }
+  .pod-desc { font-size: 10px; color: var(--text-muted); }
+
+  /* SPECIFIC POD HIGHLIGHTS */
+  .fb-badge {
+    font-size: 9px; font-weight: 800;
+    color: var(--bg-card); background: var(--accent-infra);
+    border-radius: 4px; padding: 2px 4px;
+  }
+
+  /* TEARDOWN TERMINAL */
+  .teardown-block {
+    margin-top: 24px;
+    background: #000;
+    border: 1px solid var(--border-dim);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .teardown-block span.cmd { color: var(--accent-infra); font-weight: bold; }
+  .teardown-block span.warn { color: var(--accent-alert); font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>AppMigration — DevSecOps & GitOps Pipeline</h1>
+  <p>Spring Boot · Amazon EKS · ArgoCD · Terraform · Prometheus · Grafana</p>
+</div>
+
+<!-- ================= CI PHASE ================= -->
+<div class="phase ci">
+  <div class="phase-header">CI — <span>GitHub Actions</span> · Every push to main</div>
+  <div class="workflow-row">
+    
+    <div class="step-card">
+      <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg" alt="GitHub"></div>
+      <div class="step-title">Developer</div>
+      <div class="step-desc">git push main</div>
+    </div>
+
+    <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+
+    <div class="step-card">
+      <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/java/java-original.svg" alt="Java"></div>
+      <div class="step-title">Maven Build</div>
+      <div class="step-desc">compile · test<br>package JAR</div>
+    </div>
+
+    <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+
+    <div class="step-card">
+      <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-original.svg" alt="Docker"></div>
+      <div class="step-title">Docker Build</div>
+      <div class="step-desc">multi-stage<br>SHA commit</div>
+    </div>
+
+    <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+
+    <!-- NEW TRIVY STEP -->
+    <div class="step-card">
+      <div class="icon-ring">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#eab308">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div class="step-title">Trivy Scan</div>
+      <div class="step-desc">CRITICAL, HIGH<br>Vulnerabilities</div>
+    </div>
+
+    <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+
+    <div class="step-card">
+      <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" alt="ECR"></div>
+      <div class="step-title">Push to ECR</div>
+      <div class="step-desc">Amazon ECR<br>private registry</div>
+    </div>
+
+    <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+
+    <div class="step-card">
+      <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg" alt="Manifest"></div>
+      <div class="step-title">Patch Manifest</div>
+      <div class="step-desc">sed image tag<br>commit + push</div>
+    </div>
+
+    <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+
+    <div class="step-card">
+      <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/spring/spring-original.svg" alt="Spring"></div>
+      <div class="step-title">Audit API Call</div>
+      <div class="step-desc">POST /apps<br>POST /deploy</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= CONNECTOR ================= -->
+<div class="vertical-connector">
+  <div class="v-line"></div>
+  <div class="v-badge ci-cd">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+    ArgoCD detects manifest drift → Pulls new image → Rolling update
+  </div>
+  <div class="v-line"></div>
+</div>
+
+<!-- ================= CD PHASE ================= -->
+<div class="phase cd">
+  <div class="phase-header">CD — <span>GitOps</span> · ArgoCD pulls, nothing is pushed</div>
+  <div class="workflow-row" style="align-items: stretch; justify-content: flex-start;">
+    
+    <div style="display: flex; flex-direction: column; gap: 16px; justify-content: center;">
+      <div class="step-card">
+        <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg" alt="GitHub"></div>
+        <div class="step-title">Git Repo</div>
+        <div class="step-desc">k8s/ manifests<br>Source of Truth</div>
+      </div>
+      
+      <div class="step-card" style="border-color: var(--accent-cd);">
+        <div class="icon-ring" style="border-color: var(--accent-cd);">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="var(--accent-cd)" stroke-width="2"/>
+            <circle cx="12" cy="12" r="2.5" fill="var(--accent-cd)"/>
+            <line x1="12" y1="3" x2="12" y2="6" stroke="var(--accent-cd)" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="12" y1="18" x2="12" y2="21" stroke="var(--accent-cd)" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="3" y1="12" x2="6" y2="12" stroke="var(--accent-cd)" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="18" y1="12" x2="21" y2="12" stroke="var(--accent-cd)" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="step-title">ArgoCD</div>
+        <div class="step-desc">Automated Sync<br>Self-Healing</div>
+      </div>
+    </div>
+
+    <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+
+    <div class="cluster-container">
+      <div class="cluster-header">Amazon EKS Cluster · us-east-1 · 3× t3.small</div>
+      <div class="namespaces">
+        
+        <!-- NS: Default -->
+        <div class="namespace" style="border-color: rgba(59, 130, 246, 0.4);">
+          <div class="namespace-label" style="color: var(--accent-ci); border-color: var(--accent-ci);">ns: default</div>
+          
+          <div class="pod">
+            <div class="pod-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/spring/spring-original.svg" alt="Spring"></div>
+            <div class="pod-info"><span class="pod-title">Spring API</span><span class="pod-desc">audit ledger · /metrics</span></div>
+          </div>
+          <div class="pod">
+            <div class="pod-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original.svg" alt="Postgres"></div>
+            <div class="pod-info"><span class="pod-title">Amazon RDS</span><span class="pod-desc">Postgres 16 · Private</span></div>
+          </div>
+          <div class="pod">
+            <div class="pod-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" alt="ALB"></div>
+            <div class="pod-info"><span class="pod-title">ALB Ingress</span><span class="pod-desc">Internet-facing</span></div>
+          </div>
+        </div>
+
+        <!-- NS: ArgoCD -->
+        <div class="namespace" style="border-color: rgba(168, 85, 247, 0.4);">
+          <div class="namespace-label" style="color: var(--accent-cd); border-color: var(--accent-cd);">ns: argocd</div>
+          
+          <div class="pod">
+            <div class="pod-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+                <line x1="12" y1="3" x2="12" y2="6" stroke="currentColor" stroke-width="1.5"/>
+                <line x1="12" y1="18" x2="12" y2="21" stroke="currentColor" stroke-width="1.5"/>
+                <line x1="3" y1="12" x2="6" y2="12" stroke="currentColor" stroke-width="1.5"/>
+                <line x1="18" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+            </div>
+            <div class="pod-info"><span class="pod-title">ArgoCD Server</span><span class="pod-desc">Core controller</span></div>
+          </div>
+          <div class="pod">
+            <div class="pod-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" alt="ALB"></div>
+            <div class="pod-info"><span class="pod-title">ALB Ingress</span><span class="pod-desc">HTTP Insecure</span></div>
+          </div>
+        </div>
+
+        <!-- NS: Monitoring -->
+        <div class="namespace" style="border-color: rgba(234, 179, 8, 0.4);">
+          <div class="namespace-label" style="color: #eab308; border-color: #eab308;">ns: monitoring</div>
+          
+          <div class="pod">
+            <div class="pod-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/prometheus/prometheus-original.svg" alt="Prom"></div>
+            <div class="pod-info"><span class="pod-title">Prometheus</span><span class="pod-desc">scrapes /actuator</span></div>
+          </div>
+          <div class="pod">
+            <div class="pod-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/grafana/grafana-original.svg" alt="Grafana"></div>
+            <div class="pod-info"><span class="pod-title">Grafana</span><span class="pod-desc">Dashboards · DB Source</span></div>
+          </div>
+          <div class="pod">
+            <div class="pod-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" alt="ALB"></div>
+            <div class="pod-info"><span class="pod-title">ALB Ingress</span><span class="pod-desc">Internet-facing</span></div>
+          </div>
+          <div class="pod">
+            <div class="pod-icon">
+              <svg viewBox="0 0 24 24" fill="var(--accent-alert)">
+                <polygon points="12,2 15.5,8.5 22.5,9.3 17.5,14.2 18.9,21.1 12,17.5 5.1,21.1 6.5,14.2 1.5,9.3 8.5,8.5"/>
+              </svg>
+            </div>
+            <div class="pod-info"><span class="pod-title">Alertmanager</span><span class="pod-desc">Discord webhook</span></div>
+          </div>
+        </div>
+
+        <!-- NS: Kube-System -->
+        <div class="namespace" style="border-color: rgba(16, 185, 129, 0.4);">
+          <div class="namespace-label" style="color: var(--accent-infra); border-color: var(--accent-infra);">ns: kube-system</div>
+          
+          <div class="pod">
+            <div class="pod-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" alt="ALB Ctrl"></div>
+            <div class="pod-info"><span class="pod-title">ALB Controller</span><span class="pod-desc">Provisions ALBs</span></div>
+          </div>
+          <div class="pod">
+            <div class="pod-icon"><span class="fb-badge">FB</span></div>
+            <div class="pod-info"><span class="pod-title">Fluent Bit</span><span class="pod-desc">DaemonSet · IRSA</span></div>
+          </div>
+          <div class="pod">
+            <div class="pod-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" alt="CW"></div>
+            <div class="pod-info"><span class="pod-title">CloudWatch</span><span class="pod-desc">/eks/logs</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= CONNECTOR ================= -->
+<div class="vertical-connector">
+  <div class="v-line"></div>
+  <div class="v-badge infra-cd">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+    Terraform provisions cluster · Helm bootstraps controllers
+  </div>
+  <div class="v-line"></div>
+</div>
+
+<!-- ================= INFRA PHASE ================= -->
+<div class="phase infra">
+  <div class="phase-header">Infrastructure — <span>Provisioned as Code</span> · Terraform · Run once, owned forever</div>
+  <div class="workflow-row">
+
+    <div class="step-card">
+      <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/terraform/terraform-original.svg" alt="TF"></div>
+      <div class="step-title">Terraform</div>
+      <div class="step-desc">Local state<br>CLI Apply</div>
+    </div>
+    <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+    
+    <div class="step-card">
+      <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" alt="VPC"></div>
+      <div class="step-title">VPC</div>
+      <div class="step-desc">2 public subs<br>10.0.0.0/16</div>
+    </div>
+    <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+
+    <div class="step-card">
+      <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/kubernetes/kubernetes-original.svg" alt="EKS"></div>
+      <div class="step-title">EKS 1.36</div>
+      <div class="step-desc">Managed nodes<br>t3.small ×3</div>
+    </div>
+    <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+
+    <div class="step-card">
+      <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original.svg" alt="RDS"></div>
+      <div class="step-title">Amazon RDS</div>
+      <div class="step-desc">PostgreSQL 16<br>db.t3.micro</div>
+    </div>
+    <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+
+    <div class="step-card">
+      <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" alt="IAM"></div>
+      <div class="step-title">IAM / IRSA</div>
+      <div class="step-desc">OIDC Federation<br>Scoped Roles</div>
+    </div>
+    <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+
+    <div class="step-card">
+      <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/helm/helm-original.svg" alt="Helm"></div>
+      <div class="step-title">Helm Providers</div>
+      <div class="step-desc">ArgoCD · LBC<br>Prometheus</div>
+    </div>
+    <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+    
+    <div class="step-card">
+      <div class="icon-ring"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" alt="ECR"></div>
+      <div class="step-title">ECR + Access</div>
+      <div class="step-desc">Image registry<br>IAM policies</div>
+    </div>
+
+  </div>
+
+  <div class="teardown-block">
+    <span class="warn">!</span> <span class="cmd">./teardown.sh</span> — Required before executing terraform destroy<br><br>
+    [1] Deletes all Ingress objects so LBC cleanly unprovisions physical ALBs.<br>
+    [2] Sweeps VPC for orphaned ENIs and circular SG references.<br>
+    [3] Executes terraform destroy with state-lock recovery mechanisms.<br>
+  </div>
+</div>
+
+</body>
+</html>
