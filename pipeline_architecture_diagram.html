@@ -202,8 +202,8 @@
   
   .namespaces {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    grid-template-columns: repeat(5, 1fr); /* Expanded to 5 columns */
+    gap: 16px;
   }
   
   .namespace {
@@ -226,6 +226,7 @@
     font-weight: 600;
     letter-spacing: 0.05em;
     color: var(--text-main);
+    white-space: nowrap;
   }
 
   .pod {
@@ -253,14 +254,15 @@
   .pod-info {
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
-  .pod-title { font-size: 11px; font-weight: 600; color: var(--text-main); }
-  .pod-desc { font-size: 10px; color: var(--text-muted); }
+  .pod-title { font-size: 11px; font-weight: 600; color: var(--text-main); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+  .pod-desc { font-size: 10px; color: var(--text-muted); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 
   /* SPECIFIC POD HIGHLIGHTS */
   .fb-badge {
     font-size: 9px; font-weight: 800;
-    color: var(--bg-card); background: var(--accent-infra);
+    color: var(--bg-card); background: #14b8a6;
     border-radius: 4px; padding: 2px 4px;
   }
 
@@ -315,7 +317,6 @@
 
     <div class="arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
 
-    <!-- NEW TRIVY STEP -->
     <div class="step-card">
       <div class="icon-ring">
         <svg viewBox="0 0 24 24" fill="none" stroke="#eab308">
@@ -448,7 +449,7 @@
           </div>
           <div class="pod">
             <div class="pod-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/grafana/grafana-original.svg" alt="Grafana"></div>
-            <div class="pod-info"><span class="pod-title">Grafana</span><span class="pod-desc">Dashboards · DB Source</span></div>
+            <div class="pod-info"><span class="pod-title">Grafana</span><span class="pod-desc">Dashboards · DB Src</span></div>
           </div>
           <div class="pod">
             <div class="pod-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" alt="ALB"></div>
@@ -472,6 +473,12 @@
             <div class="pod-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" alt="ALB Ctrl"></div>
             <div class="pod-info"><span class="pod-title">ALB Controller</span><span class="pod-desc">Provisions ALBs</span></div>
           </div>
+        </div>
+        
+        <!-- NS: Logging -->
+        <div class="namespace" style="border-color: rgba(20, 184, 166, 0.4);">
+          <div class="namespace-label" style="color: #14b8a6; border-color: #14b8a6;">ns: logging</div>
+          
           <div class="pod">
             <div class="pod-icon"><span class="fb-badge">FB</span></div>
             <div class="pod-info"><span class="pod-title">Fluent Bit</span><span class="pod-desc">DaemonSet · IRSA</span></div>

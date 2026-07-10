@@ -18,12 +18,6 @@ In short: while other systems are responsible for shipping code, this applicatio
 
 ## System Architecture
 
-<p align="center">
-  <a href="images/pipeline.png">
-    <img src="images/pipeline.png" alt="AppMigration Architecture" width="100%">
-  </a>
-</p>
-
 Infrastructure is provisioned entirely through Terraform and follows a GitOps model in which this repository is the source of truth for both application manifests and cluster state.
 
 | Category | Technology | Purpose |
