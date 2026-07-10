@@ -57,6 +57,64 @@ resource "helm_release" "prometheus" {
           paths = ["/"]
         }
       }
+       
+      alertmanager = {
+        config = {
+          global = {
+            resolve_timeout = "5m"
+          }
+          route = {
+            receiver        = "discord"
+            group_by        = ["alertname"]
+            group_wait      = "10s"
+            group_interval  = "30s"
+            repeat_interval = "1h"
+
+            routes = [
+            {
+              receiver = "null"
+              matchers = ["alertname = \"Watchdog\""]
+            }
+          ]
+          }
+
+          receivers = [
+            {
+              name = "null"
+            },
+            {
+              name = "discord"
+              discord_configs = [
+                {
+                  webhook_url = var.discord_webhook_url
+                  send_resolved = true
+                }
+              ]
+            }
+          ]
+        }
+      }
+
+      additionalPrometheusRulesMap = {
+        app-migration-rules = {
+          groups = [
+            {
+              name = "app-migration"
+              rules = [
+                {
+                  alert = "AppMigrationDown"
+                  expr  = "up{job=\"app-migration-service\"} == 0"
+                  for   = "5s" // usually its longer but i made it short for testing purposes to catch it before argocd does
+                  labels = { severity = "critical" }
+                  annotations = {
+                    summary = "AppMigration service is down"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
     })
   ]
 }

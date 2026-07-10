@@ -5,3 +5,8 @@ variable "db_name" {
 variable "db_username" {
   default = "am_user"
 }
+
+variable "discord_webhook_url" {
+  type      = string
+  sensitive = true
+}
